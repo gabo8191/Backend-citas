@@ -47,13 +47,16 @@ app.get('/appointment', (req, res) => {
   const { start_date_appointment, end_date_appointment } = req.query;
 
   if (!start_date_appointment || !end_date_appointment) {
-    return res.status(400).json({ mensaje: 'No se ha esetablecido el rango de fechas correctamente' });
+    return res.status(400).json({ mensaje: 'No se ha establecido el rango de fechas correctamente' });
   }
   const appointmentEnRango = appointment.filter(appt => {
     return new Date(appt.date_appointment) >= new Date(start_date_appointment) &&
       new Date(appt.date_appointment) <= new Date(end_date_appointment);
   });
 
+  if (appointmentEnRango.length === 0) {
+    return res.status(404).json({ mensaje: 'No se encontraron citas en el rango de fechas' });
+  }
   res.json(appointmentEnRango);
 });
 
