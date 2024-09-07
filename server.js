@@ -2,17 +2,26 @@ const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use(cors());
+app.use(cors(
+  {
+    origin: 'http://localhost'
+  }
+));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, './uploads/');
+    const uploadPath = './uploads/';
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath);
+    }
+    cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
     cb(null, req.body.id_patient + path.extname(file.originalname));
@@ -29,7 +38,7 @@ app.post('/appointment', upload.single('picture_auto'), async (req, res) => {
   const generateUniqueCode = customAlphabet(alphabet, 5);
   const code = generateUniqueCode();
   if (!req.body.id_patient || !req.body.date_appointment) {
-    return res.status(400).json({ mensaje: 'Faltan campos obligatorios' });
+    return res.status(400).json({ message: 'Faltan campos obligatorios' });
   }
   const { id_patient, date_appointment } = req.body;
   const picture_auto = req.file ? req.file.filename : null;
@@ -47,7 +56,7 @@ app.get('/appointment', (req, res) => {
   const { start_date_appointment, end_date_appointment } = req.query;
 
   if (!start_date_appointment || !end_date_appointment) {
-    return res.status(400).json({ mensaje: 'No se ha establecido el rango de fechas correctamente' });
+    return res.status(400).json({ message: 'No se ha establecido el rango de fechas correctamente' });
   }
   const appointmentEnRango = appointment.filter(appt => {
     return new Date(appt.date_appointment) >= new Date(start_date_appointment) &&
@@ -55,7 +64,7 @@ app.get('/appointment', (req, res) => {
   });
 
   if (appointmentEnRango.length === 0) {
-    return res.status(404).json({ mensaje: 'No se encontraron citas en el rango de fechas' });
+    return res.status(404).json({ message: 'No se encontraron citas en el rango de fechas' });
   }
   res.json(appointmentEnRango);
 });
@@ -75,9 +84,9 @@ app.patch('/appointment/:code', (req, res) => {
   const { code } = req.params;
   const appt = appointment.find(c => c.code === code);
   if (appt) {
-    if(appt.status === 'cancelada') {
+    if (appt.status === 'cancelada') {
       return res.status(400).json({ message: 'La cita ya se encuentra cancelada' });
-    }else {
+    } else {
       appt.status = 'cancelada';
       res.json({ message: 'Cita cancelada' });
     }
