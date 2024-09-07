@@ -75,8 +75,12 @@ app.patch('/appointment/:code', (req, res) => {
   const { code } = req.params;
   const appt = appointment.find(c => c.code === code);
   if (appt) {
-    appt.status = 'cancelada';
-    res.json({ message: 'Cita cancelada' });
+    if(appt.status === 'cancelada') {
+      return res.status(400).json({ message: 'La cita ya se encuentra cancelada' });
+    }else {
+      appt.status = 'cancelada';
+      res.json({ message: 'Cita cancelada' });
+    }
   } else {
     res.status(404).json({ message: 'Cita no encontrada' });
   }
