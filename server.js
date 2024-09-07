@@ -54,9 +54,6 @@ app.get('/appointment', (req, res) => {
       new Date(appt.date_appointment) <= new Date(end_date_appointment);
   });
 
-  if (appointmentEnRango.length === 0) {
-    return res.json({ mensaje: 'No hay citas en ese rango de fechas' });
-  }
   res.json(appointmentEnRango);
 });
 
