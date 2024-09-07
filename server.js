@@ -8,6 +8,7 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(cors());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -22,7 +23,7 @@ const upload = multer({ storage });
 
 let appointment = [];
 
-app.post('/appointment', upload.single('picture_auto'), async(req, res) => {
+app.post('/appointment', upload.single('picture_auto'), async (req, res) => {
   const { customAlphabet } = await import('nanoid');
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const generateUniqueCode = customAlphabet(alphabet, 5);
@@ -35,7 +36,7 @@ app.post('/appointment', upload.single('picture_auto'), async(req, res) => {
 
   const existingCitation = appointment.find(appointment => appointment.id_patient === id_patient);
   if (existingCitation) {
-    return res.status(400).json({ mensaje: 'El paciente ya tiene una cita programada' });
+    return res.status(400).json({ message: 'El paciente ya tiene una cita programada' });
   }
   const nuevaCita = { code, id_patient, date_appointment, picture_auto, status: 'activa' };
   appointment.push(nuevaCita);
@@ -49,7 +50,8 @@ app.get('/appointment', (req, res) => {
     return res.status(400).json({ mensaje: 'No se ha esetablecido el rango de fechas correctamente' });
   }
   const appointmentEnRango = appointment.filter(appt => {
-    return new Date(appt.date_appointment) >= new Date(start_date_appointment) && new Date(appt.date_appointment) <= new Date(end_date_appointment);
+    return new Date(appt.date_appointment) >= new Date(start_date_appointment) &&
+      new Date(appt.date_appointment) <= new Date(end_date_appointment);
   });
 
   if (appointmentEnRango.length === 0) {
@@ -64,18 +66,19 @@ app.get('/appointment/:code', (req, res) => {
   if (appt) {
     res.json(appt);
   } else {
-    res.status(404).json({ mensaje: 'Cita no encontrada' });
+    res.status(404).json({ message: 'Cita no encontrada' });
   }
 });
+
 
 app.patch('/appointment/:code', (req, res) => {
   const { code } = req.params;
   const appt = appointment.find(c => c.code === code);
   if (appt) {
     appt.status = 'cancelada';
-    res.json({ mensaje: 'Cita cancelada' });
+    res.json({ message: 'Cita cancelada' });
   } else {
-    res.status(404).json({ mensaje: 'Cita no encontrada' });
+    res.status(404).json({ message: 'Cita no encontrada' });
   }
 });
 
