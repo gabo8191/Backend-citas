@@ -27,6 +27,9 @@ app.post('/appointment', upload.single('picture_auto'), async(req, res) => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const generateUniqueCode = customAlphabet(alphabet, 5);
   const code = generateUniqueCode();
+  if (!req.body.id_patient || !req.body.date_appointment) {
+    return res.status(400).json({ mensaje: 'Faltan campos obligatorios' });
+  }
   const { id_patient, date_appointment } = req.body;
   const picture_auto = req.file ? req.file.filename : null;
 
@@ -36,16 +39,22 @@ app.post('/appointment', upload.single('picture_auto'), async(req, res) => {
   }
   const nuevaCita = { code, id_patient, date_appointment, picture_auto, status: 'activa' };
   appointment.push(nuevaCita);
-
   res.json({ code });
 });
 
 app.get('/appointment', (req, res) => {
   const { start_date_appointment, end_date_appointment } = req.query;
 
+  if (!start_date_appointment || !end_date_appointment) {
+    return res.status(400).json({ mensaje: 'No se ha esetablecido el rango de fechas correctamente' });
+  }
   const appointmentEnRango = appointment.filter(appt => {
     return new Date(appt.date_appointment) >= new Date(start_date_appointment) && new Date(appt.date_appointment) <= new Date(end_date_appointment);
   });
+
+  if (appointmentEnRango.length === 0) {
+    return res.json({ mensaje: 'No hay citas en ese rango de fechas' });
+  }
   res.json(appointmentEnRango);
 });
 
