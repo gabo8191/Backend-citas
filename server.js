@@ -7,62 +7,65 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use(cors()); 
+app.use(cors());
 
-// Configuración de almacenamiento de archivos (fotos)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, './uploads/');
   },
   filename: (req, file, cb) => {
-    cb(null, req.body.cc + path.extname(file.originalname)); 
+    cb(null, req.body.id_patient + path.extname(file.originalname));
   },
 });
 
 const upload = multer({ storage });
 
-let citas = []; 
+let appointment = [];
 
-// Crear cita médica
-app.post('/citas', upload.single('foto'), (req, res) => {
-  const { cc, fecha } = req.body;
-  const foto = req.file ? req.file.filename : null;
+app.post('/appointment', upload.single('picture_auto'), async(req, res) => {
+  const { customAlphabet } = await import('nanoid');
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const generateUniqueCode = customAlphabet(alphabet, 5);
+  const code = generateUniqueCode();
+  const { id_patient, date_appointment } = req.body;
+  const picture_auto = req.file ? req.file.filename : null;
 
-  const citaExistente = citas.find(cita => cita.cc === cc);
-  if (citaExistente) {
-    console.log(`Error: El paciente con CC ${cc} ya tiene una cita programada.`);
+  const existingCitation = appointment.find(appointment => appointment.id_patient === id_patient);
+  if (existingCitation) {
     return res.status(400).json({ mensaje: 'El paciente ya tiene una cita programada' });
   }
-  const nuevaCita = { cc, fecha, foto, estado: 'activa' };
-  citas.push(nuevaCita);
+  const nuevaCita = { code, id_patient, date_appointment, picture_auto, status: 'activa' };
+  appointment.push(nuevaCita);
 
-  console.log(`Cita médica creada: ${JSON.stringify(nuevaCita, null, 2)}`);
-
-  res.json({ cc }); 
+  res.json({ code });
 });
 
-// Consultar citas por rango de fechas
-app.get('/citas', (req, res) => {
-  const { fechaInicio, fechaFin } = req.query;
+app.get('/appointment', (req, res) => {
+  const { start_date_appointment, end_date_appointment } = req.query;
 
-  const citasEnRango = citas.filter(cita => {
-    return new Date(cita.fecha) >= new Date(fechaInicio) && new Date(cita.fecha) <= new Date(fechaFin);
+  const appointmentEnRango = appointment.filter(appt => {
+    return new Date(appt.date_appointment) >= new Date(start_date_appointment) && new Date(appt.date_appointment) <= new Date(end_date_appointment);
   });
-
-  res.json(citasEnRango);
+  res.json(appointmentEnRango);
 });
 
-// Cancelar cita por CC
-app.delete('/citas/:cc', (req, res) => {
-  const { cc } = req.params;
+app.get('/appointment/:code', (req, res) => {
+  const { code } = req.params;
+  const appt = appointment.find(c => c.code === code);
+  if (appt) {
+    res.json(appt);
+  } else {
+    res.status(404).json({ mensaje: 'Cita no encontrada' });
+  }
+});
 
-  const cita = citas.find(c => c.cc === cc);
-  if (cita) {
-    cita.estado = 'cancelada';
-    console.log(`Cita cancelada para el paciente con CC ${cc}.`);
+app.patch('/appointment/:code', (req, res) => {
+  const { code } = req.params;
+  const appt = appointment.find(c => c.code === code);
+  if (appt) {
+    appt.status = 'cancelada';
     res.json({ mensaje: 'Cita cancelada' });
   } else {
-    console.log(`Error: No se encontró una cita para el paciente con CC ${cc}.`);
     res.status(404).json({ mensaje: 'Cita no encontrada' });
   }
 });
