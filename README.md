@@ -1,5 +1,11 @@
 # Backend de Citas Médicas
 
+## Autores
+
+- Gabriel Fernando Castillo Mendieta
+- Juan Davi Ochoa Pinilla
+- Jhon Fredy Camargo Fonseca
+
 ## Instalación
 
 1. Para instalar las dependencias, ejecute:
