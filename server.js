@@ -13,7 +13,6 @@ app.use(cors({
 }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 let index = 0;
-// Configuración de almacenamiento de multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = './uploads/';
@@ -33,22 +32,18 @@ const upload = multer({ storage });
 let appointment = [];
 
 app.post('/appointment', upload.single('picture_auto'), async (req, res) => {
-  // Validación de campos obligatorios
   if (!req.body.id_patient || !req.body.date_appointment) {
     if (req.file) {
-      fs.unlinkSync(req.file.path); // Elimina la imagen si se subió, pero los datos no son válidos
+      fs.unlinkSync(req.file.path); 
     }
     return res.status(400).json({ message: 'Faltan campos obligatorios' });
   }
 
   const { id_patient, date_appointment } = req.body;
-
-  // Verifica si el paciente ya tiene una cita
-  const existingCitation = appointment.find(appointment => appointment.id_patient === id_patient);
+  const existingCitation = appointment.find(appointment => appointment.id_patient === id_patient && appointment.status === 'activa');
   if (existingCitation) {
-    // Si el paciente ya tiene una cita, no sobreescribir la imagen
     if (req.file) {
-      fs.unlinkSync(req.file.path); // Elimina la nueva imagen subida
+      fs.unlinkSync(req.file.path); 
     }
     return res.status(400).json({ message: 'El paciente ya tiene una cita programada, no se permite modificar la imagen.' });
   }
@@ -57,8 +52,6 @@ app.post('/appointment', upload.single('picture_auto'), async (req, res) => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const generateUniqueCode = customAlphabet(alphabet, 5);
   const code = generateUniqueCode();
-
-  // Si todo está bien, guarda la cita y la imagen
   const picture_auto = req.file ? req.file.filename : null;
   const nuevaCita = { code, id_patient, date_appointment, picture_auto, status: 'activa' };
   appointment.push(nuevaCita);
